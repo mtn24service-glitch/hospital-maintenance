@@ -16,6 +16,9 @@ static/uploads/*
 data/*
 !data/.gitkeep
 
+# Demo video artifacts (recordings, frames, exports)
+demo/
+
 # Editor / OS
 .vscode/
 .idea/
