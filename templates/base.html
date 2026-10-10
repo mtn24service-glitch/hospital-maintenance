@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('ar') }}" dir="{{ dir | default('rtl') }}" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ t('brand.short') }}{% endblock %} | {{ t('brand.hospital') }}</title>
+  <script>
+    (function () {
+      try {
+        var th = localStorage.getItem('hm_theme');
+        if (!th) th = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', th);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="icon" href="/static/img/jazan-cluster-logo.png">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {% if user %}
+  <header class="topbar">
+    <div class="brand">
+      <img src="/static/img/jazan-cluster-logo.png" alt="logo" class="logo">
+      <div>
+        <h1>{{ t('brand.name') }}</h1>
+        <small>{{ t('brand.hospital') }}</small>
+      </div>
+    </div>
+    <nav class="nav">
+      {% if is_admin %}
+      <a href="/dashboard" class="nav-link {% if request.url.path == '/dashboard' %}active{% endif %}">{{ t('nav.dashboard') }}</a>
+      <a href="/reports" class="nav-link {% if request.url.path.startswith('/reports') %}active{% endif %}">{{ t('nav.reports') }}</a>
+      <a href="/settings" class="nav-link {% if request.url.path.startswith('/settings') %}active{% endif %}">{{ t('nav.settings') }}</a>
+      {% endif %}
+      <a href="/report" class="btn btn-primary btn-sm" target="_blank">+ {{ t('nav.report') }}</a>
+    </nav>
+    <div class="user-box">
+      {% include "_controls.html" %}
+      <span class="role-badge role-{{ user.role }}">{{ dict(roles).get(user.role, user.role) }}</span>
+      <span class="user-name">{{ user.full_name }}</span>
+      <form method="post" action="/logout" style="display:inline">
+        <button type="submit" class="btn btn-outline btn-sm">{{ t('nav.logout') }}</button>
+      </form>
+    </div>
+  </header>
+  {% else %}
+  <header class="topbar topbar-slim">
+    <div class="brand">
+      <img src="/static/img/jazan-cluster-logo.png" alt="logo" class="logo">
+      <div>
+        <h1>{{ t('brand.name') }}</h1>
+        <small>{{ t('brand.hospital') }}</small>
+      </div>
+    </div>
+    <div class="user-box">
+      {% include "_controls.html" %}
+      <a href="/" class="nav-link">{{ t('nav.home') }}</a>
+      <a href="/report" class="nav-link">{{ t('nav.report') }}</a>
+      <a href="/login" class="btn btn-outline btn-sm">{{ t('nav.login') }}</a>
+    </div>
+  </header>
+  {% endif %}
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <span>{{ t('brand.hospital') }} — {{ t('footer.rights') }}</span>
+  </footer>
+
+  <div id="toast-area"></div>
+  <script>window.HM_T = {{ (js_strings | default({})) | tojson }}; window.HM_LANG = {{ (lang | default('ar')) | tojson }};</script>
+  <script src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ t('rep.title') }}{% endblock %}
+{% block content %}
+{% set pmeta = prio_ar %}
+<h2 class="page-title">📊 {{ t('rep.title') }}</h2>
+
+<form method="get" action="/reports" class="card mb filters">
+  <div class="f-item"><label>{{ t('rep.f_status') }}</label><select name="status">
+      <option value="all">{{ t('rep.all') }}</option>
+      {% for s, ar, _ in statuses %}<option value="{{ s }}" {{ 'selected' if filters.status == s else '' }}>{{ ar }}</option>{% endfor %}
+      <option value="cancelled" {{ 'selected' if filters.status == 'cancelled' else '' }}>{{ t('status.cancelled') }}</option>
+  </select></div>
+  <div class="f-item"><label>{{ t('rep.f_priority') }}</label><select name="priority">
+      <option value="all">{{ t('rep.all') }}</option>
+      {% for p, ar, _ in priorities %}<option value="{{ p }}" {{ 'selected' if filters.priority == p else '' }}>{{ ar }}</option>{% endfor %}
+  </select></div>
+  <div class="f-item"><label>{{ t('rep.f_dept') }}</label><select name="department">
+      <option value="all">{{ t('rep.all') }}</option>
+      {% for d in departments %}<option value="{{ d.name }}" {{ 'selected' if filters.department == d.name else '' }}>{{ d.name }}</option>{% endfor %}
+  </select></div>
+  <div class="f-item"><label>{{ t('rep.f_from') }}</label><input type="date" name="date_from" value="{{ filters.date_from or '' }}"></div>
+  <div class="f-item"><label>{{ t('rep.f_to') }}</label><input type="date" name="date_to" value="{{ filters.date_to or '' }}"></div>
+  <div class="f-item"><label>{{ t('rep.f_search') }}</label><input name="q" value="{{ filters.q or '' }}" placeholder="{{ t('rep.f_search_ph') }}"></div>
+  <button type="submit" class="btn btn-primary">{{ t('rep.view') }}</button>
+</form>
+
+<div class="grid grid-3 mb">
+  <div class="card kpi"><div class="icon bg-green"><span>📋</span></div>
+    <div><div class="num t-green">{{ count }}</div><div class="lbl">{{ t('rep.k_count') }}</div></div></div>
+  <div class="card kpi"><div class="icon bg-blue"><span>🕐</span></div>
+    <div><div class="num t-blue">{{ avg_response }}</div><div class="lbl">{{ t('rep.k_avg_recv') }}</div></div></div>
+  <div class="card kpi"><div class="icon bg-purple"><span>🔧</span></div>
+    <div><div class="num t-purple">{{ avg_resolve }}</div><div class="lbl">{{ t('rep.k_avg_fix') }}</div></div></div>
+  <div class="card kpi"><div class="icon bg-amber"><span>✅</span></div>
+    <div><div class="num t-amber">{{ stats.pct }}%</div><div class="lbl">{{ t('rep.k_pct') }}</div></div></div>
+  <div class="card kpi"><div class="icon bg-red"><span>🏥</span></div>
+    <div><div class="num t-red">{{ stats.by_status.get('new', 0) }}</div><div class="lbl">{{ t('rep.k_new') }}</div></div></div>
+  <div class="card kpi"><div class="icon bg-teal"><span>🔁</span></div>
+    <div><div class="num t-teal">{{ recurring|length }}</div><div class="lbl">{{ t('rep.k_recur') }}</div></div></div>
+</div>
+
+<div class="card mb">
+  <div class="row-between">
+    <div class="section-title" style="margin:0">{{ t('rep.selected_results') }} ({{ count }})</div>
+    <div class="row">
+      <a href="/reports/export/excel?status={{ filters.status }}&priority={{ filters.priority }}&department={{ filters.department }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q }}" class="btn btn-primary btn-sm">📥 {{ t('rep.export_excel') }}</a>
+      <a href="/reports/export/pdf?status={{ filters.status }}&priority={{ filters.priority }}&department={{ filters.department }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q }}" class="btn btn-outline btn-sm">📄 {{ t('rep.export_pdf') }}</a>
+      <a href="/reports/export/live" class="btn btn-outline btn-sm">🌳 {{ t('rep.live_excel') }}</a>
+    </div>
+  </div>
+  <div class="table-wrap mt">
+    <table class="tbl">
+      <thead><tr><th>{{ t('dash.th_ticket') }}</th><th>{{ t('dash.th_time') }}</th><th>{{ t('dash.th_dept') }}</th><th>{{ t('dash.th_type') }}</th><th>{{ t('rep.th_priority') }}</th><th>{{ t('dash.th_status') }}</th><th>{{ t('dash.th_tech') }}</th></tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr class="{{ 'crit-row' if r.priority == 'critical' and r.status not in ['closed','cancelled'] else '' }}">
+          <td><a href="/complaints/{{ r.id }}" class="ticket" style="direction:ltr">{{ r.ticket_no }}</a></td>
+          <td class="small">{{ fmt_dt(r.created_at) }}</td>
+          <td>{{ r.department }}</td>
+          <td>{{ r.fault_type }}</td>
+          <td><span class="pill {{ {'critical':'bg-soft-red','high':'bg-soft-orange','medium':'bg-soft-amber','low':'bg-soft-green'}.get(r.priority,'bg-soft-gray') }}">{{ pmeta.get(r.priority, r.priority) }}</span></td>
+          <td><span class="pill {{ {'new':'bg-soft-blue','received':'bg-soft-cyan','in_progress':'bg-soft-purple','waiting_parts':'bg-soft-amber','completed':'bg-soft-green','verified':'bg-soft-teal','closed':'bg-soft-gray','cancelled':'bg-soft-red'}.get(r.status,'bg-soft-gray') }}">{{ status_ar(r.status) }}</span></td>
+          <td class="small">{{ r.assigned_technician or '—' }}</td>
+        </tr>
+        {% else %}<tr><td colspan="7" class="muted">{{ t('rep.no_results') }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="section-title">{{ t('rep.top_dept') }}</div>
+    <table class="tbl">
+      {% for d in by_department %}<tr><td>{{ d.name }}</td><td class="b">{{ d.count }}</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <div class="section-title">{{ t('rep.top_type') }}</div>
+    <table class="tbl">
+      {% for t in by_type %}<tr><td>{{ t.name }}</td><td class="b">{{ t.count }}</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <div class="section-title">{{ t('rep.tech_perf') }}</div>
+    <table class="tbl">
+      <thead><tr><th>{{ t('dash.th_tech') }}</th><th>{{ t('dash.th_total') }}</th><th>{{ t('dash.th_done') }}</th><th>{{ t('dash.th_open') }}</th><th>{{ t('dash.th_pct') }}</th></tr></thead>
+      {% for t in tech_perf %}<tr><td>{{ t.name }}</td><td>{{ t.total }}</td><td>{{ t.done }}</td><td>{{ t.open }}</td><td>{{ t.pct }}%</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <div class="section-title">{{ t('rep.recurring') }}</div>
+    <table class="tbl">
+      {% for r in recurring %}<tr><td>{{ r.location }}</td><td class="b">{{ r.count }} {{ t('rep.ticket_label') }}</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+
+<div class="card mt">
+  <div class="section-title">{{ t('rep.over_90') }}</div>
+  <canvas id="chart-over" width="100" height="42"></canvas>
+</div>
+
+<script>
+  window.hm._overTime = {{ over_time | tojson }};
+  (function () {
+    var s = document.createElement('script');
+    s.src = '/static/js/chart.umd.min.js';
+    s.onload = function () {
+      var el = document.getElementById('chart-over');
+      new Chart(el, {
+        type: 'line',
+        data: {
+          labels: window.hm._overTime.map(function (r) { return r.day; }),
+          datasets: [{ label: '{{ t('rep.ds_label') }}', data: window.hm._overTime.map(function (r) { return r.count; }),
+            borderColor: '#0b6b42', backgroundColor: 'rgba(11,107,66,.15)', fill: true, tension: .3 }]
+        },
+        options: { responsive: true, maintainAspectRatio:false, plugins: { legend: { labels: { font: { family: 'Cairo' } } } } }
+      });
+    };
+    document.head.appendChild(s);
+  })();
+</script>
+{% endblock %}

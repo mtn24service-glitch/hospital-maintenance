@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% block title %}{{ t('cd.page_word') }} {{ c.ticket_no }}{% endblock %}
+{% block content %}
+{% set pmeta = prio_ar %}
+{% set prio_color = {'critical':'#dc2626','high':'#ea580c','medium':'#d97706','low':'#16a34a'}.get(c.priority, '#64748b') %}
+
+<div class="row-between" style="margin-bottom:14px">
+  <div class="row">
+    <a href="/dashboard" class="btn btn-outline btn-sm">→ {{ t('cd.back_dashboard') }}</a>
+    <h2 class="page-title" style="margin:0">{{ t('cd.page_word') }} <span class="ticket" style="direction:ltr">{{ c.ticket_no }}</span></h2>
+  </div>
+  <div class="row">
+    <span class="pill {{ {'critical':'bg-soft-red','high':'bg-soft-orange','medium':'bg-soft-amber','low':'bg-soft-green'}.get(c.priority, 'bg-soft-gray') }}">
+      {{ t('cd.priority') }}: {{ pmeta.get(c.priority, c.priority) }}
+    </span>
+    <span class="pill {{ {'new':'bg-soft-blue','received':'bg-soft-cyan','in_progress':'bg-soft-purple','waiting_parts':'bg-soft-amber','completed':'bg-soft-green','verified':'bg-soft-teal','closed':'bg-soft-gray','cancelled':'bg-soft-red'}.get(c.status, 'bg-soft-gray') }}">
+      {{ status_ar(c.status) }}
+    </span>
+    {% if c.is_demo %}<span class="pill bg-soft-gray">{{ t('cd.demo_badge') }}</span>{% endif %}
+  </div>
+</div>
+
+<div class="card mb no-print" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+  <img src="{{ qr_src }}" alt="QR" style="width:110px;height:110px;border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff">
+  <div style="flex:1;min-width:220px">
+    <div class="section-title" style="margin:0">📱 {{ t('cd.qr') }}</div>
+    <div class="small muted">{{ t('cd.qr_hint') }}</div>
+    <div class="small" style="direction:ltr;color:var(--primary);word-break:break-all">{{ track_url }}</div>
+  </div>
+  <div class="row">
+    <a href="/card/{{ c.ticket_no }}" target="_blank" class="btn btn-outline btn-sm">🖨️ {{ t('cd.print_card') }}</a>
+    <a href="/complaints/{{ c.id }}/pdf" target="_blank" class="btn btn-outline btn-sm">📄 {{ t('cd.download_pdf') }}</a>
+    <button class="btn btn-outline btn-sm" onclick="navigator.clipboard&&navigator.clipboard.writeText('{{ track_url }}');window.hm&&window.hm.toast({{ t('cd.copied')|tojson }},'info')">🔗 {{ t('btn.copy') }}</button>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <!-- Right: details -->
+  <div class="card">
+    <div class="section-title">📋 {{ t('cd.details') }}</div>
+    <table class="tbl">
+      <tr><td class="b" style="width:40%">{{ t('cd.f_department') }}</td><td>{{ c.department }}</td></tr>
+      <tr><td class="b">{{ t('cd.f_location') }}</td>
+        <td>{{ c.building or '—' }}{% if c.floor %} / {{ c.floor }}{% endif %}{% if c.room %} / {{ c.room }}{% endif %}</td></tr>
+      <tr><td class="b">{{ t('cd.f_fault_type') }}</td><td>{{ c.fault_type }}</td></tr>
+      <tr><td class="b">{{ t('cd.f_specialty') }}</td><td>{{ c.specialty or '—' }}</td></tr>
+      <tr><td class="b">{{ t('cd.f_title') }}</td><td>{{ c.title or '—' }}</td></tr>
+      <tr><td class="b">{{ t('cd.f_description') }}</td><td style="white-space:pre-wrap">{{ c.description }}</td></tr>
+      <tr><td class="b">{{ t('cd.f_extra_notes') }}</td><td>{{ c.extra_notes or '—' }}</td></tr>
+      <tr><td class="b">{{ t('cd.f_affects_safety') }}</td><td>{{ t('common.yes_warn') if c.affects_safety else t('common.no') }}</td></tr>
+      <tr><td class="b">{{ t('cd.f_affects_continuity') }}</td><td>{{ t('common.yes_warn') if c.affects_continuity else t('common.no') }}</td></tr>
+    </table>
+
+    <div class="section-title mt">👤 {{ t('cd.reporter') }}</div>
+    <div class="flex">
+      <div class="avatar">{{ c.reporter_name[:1] }}</div>
+      <div>
+        <b>{{ c.reporter_name }}</b><br>
+        <span class="small muted">{{ c.reporter_contact }}{% if c.reporter_email %} · {{ c.reporter_email }}{% endif %}</span>
+      </div>
+    </div>
+
+    <div class="section-title mt">🗓️ {{ t('cd.timing') }}</div>
+    <table class="tbl">
+      <tr><td class="b">{{ t('cd.created_at') }}</td><td>{{ fmt_dt(c.created_at) }}</td></tr>
+      <tr><td class="b">{{ t('cd.received_at') }}</td><td>{{ fmt_dt(c.received_at) }}</td></tr>
+      <tr><td class="b">{{ t('cd.started_at') }}</td><td>{{ fmt_dt(c.started_at) }}</td></tr>
+      <tr><td class="b">{{ t('cd.completed_at') }}</td><td>{{ fmt_dt(c.completed_at) }}</td></tr>
+      <tr><td class="b">{{ t('cd.closed_at') }}</td><td>{{ fmt_dt(c.closed_at) }}</td></tr>
+      <tr><td class="b">{{ t('cd.target_response') }}</td><td>{{ fmt_dt(c.resp_target_at) }}</td></tr>
+      <tr><td class="b">{{ t('cd.target_resolve') }}</td><td>{{ fmt_dt(c.resolve_target_at) }}</td></tr>
+    </table>
+
+    {% if attachments %}
+    <div class="section-title mt">📎 {{ t('cd.attachments') }}</div>
+    <div class="grid grid-2">
+      {% for a in attachments %}
+      <div class="card" style="padding:10px">
+        {% if a.mime and a.mime.startswith('video/') %}
+        <video class="video-tag" controls src="{{ a.stored }}"></video>
+        {% elif a.mime and a.mime.startswith('image/') %}
+        <img class="attach-img" src="{{ a.stored }}" alt="{{ a.filename }}">
+        {% else %}
+        <a href="{{ a.stored }}" target="_blank">📄 {{ a.filename }}</a>
+        {% endif %}
+        <div class="small muted mt">{{ a.filename }}</div>
+        {% if can_manage %}
+        <form method="post" action="/complaints/{{ c.id }}/attachments/{{ a.id }}/delete" style="margin-top:6px"
+              onsubmit="return confirm({{ t('cd.confirm_del_attachment')|tojson }})">
+          <button class="btn btn-danger btn-xs">{{ t('btn.delete') }}</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Left: actions -->
+  <div>
+    {% if can_manage %}
+    <div class="card mb">
+      <div class="section-title">🔁 {{ t('cd.status_cycle') }}</div>
+      <form method="post" action="/complaints/{{ c.id }}/status" class="form-grid">
+        <div style="grid-column:1/-1">
+          <label class="f">{{ t('cd.new_status') }}</label>
+          <select name="status">
+            {% for s, ar, _ in statuses %}
+            <option value="{{ s }}" {{ 'selected' if c.status == s else '' }}>{{ ar }}</option>
+            {% endfor %}
+            <option value="cancelled" {{ 'selected' if c.status == 'cancelled' else '' }}>{{ t('status.cancelled') }}</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1" id="cancel-reason-box">
+          <label class="f">{{ t('cd.cancel_reason') }}</label>
+          <input name="cancel_reason" value="{{ c.cancel_reason or '' }}" placeholder="{{ t('cd.cancel_reason_ph') }}">
+        </div>
+        <button class="btn btn-primary" style="grid-column:1/-1">{{ t('cd.save_change') }}</button>
+      </form>
+      <script>
+        var sel = document.querySelector('#cancel-reason-box');
+        var stSel = document.querySelector('select[name="status"]');
+        function toggleCancel() {
+          sel.style.display = stSel.value === 'cancelled' ? 'block' : 'none';
+          sel.style.gridColumn = '1/-1';
+        }
+        if (sel) { stSel.addEventListener('change', toggleCancel); toggleCancel(); }
+      </script>
+      <p class="help mt">{{ t('cd.critical_note') }}</p>
+    </div>
+
+    <div class="card mb">
+      <div class="section-title">👷 {{ t('cd.assignment') }}</div>
+      <form method="post" action="/complaints/{{ c.id }}/assign" class="form-grid">
+        <div>
+          <label class="f">{{ t('cd.technician') }}</label>
+          <select name="technician">
+            <option value="">{{ t('common.select') }}</option>
+            {% for t in technicians %}
+            <option value="{{ t.name }}" {{ 'selected' if c.assigned_technician == t.name else '' }}>{{ t.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="f">{{ t('cd.f_specialty') }}</label>
+          <select name="specialty">
+            <option value="">{{ t('common.select') }}</option>
+            {% for s in specialties %}
+            <option value="{{ s.name }}" {{ 'selected' if c.specialty == s.name else '' }}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="f">{{ t('cd.team_note') }}</label>
+          <input name="team" value="{{ c.assigned_team or '' }}" placeholder="{{ t('cd.team_ph') }}">
+        </div>
+        <button class="btn btn-primary" style="grid-column:1/-1">{{ t('cd.assign_btn') }}</button>
+      </form>
+    </div>
+
+    <div class="card mb">
+      <div class="section-title">📝 {{ t('cd.edit_notes') }}</div>
+      <form method="post" action="/complaints/{{ c.id }}/edit" class="form-grid">
+        <div style="grid-column:1/-1"><label class="f">{{ t('cd.f_title') }}</label><input name="title" value="{{ c.title or '' }}"></div>
+        <div style="grid-column:1/-1"><label class="f">{{ t('cd.f_description') }}</label><textarea name="description" style="min-height:80px">{{ c.description }}</textarea></div>
+        <div>
+          <label class="f">{{ t('cd.priority') }}</label>
+          <select name="priority">
+            {% for p, ar, _ in priorities %}<option value="{{ p }}" {{ 'selected' if c.priority == p else '' }}>{{ ar }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="f">{{ t('cd.f_department') }}</label>
+          <input name="department" value="{{ c.department }}">
+        </div>
+        <div>
+          <label class="f">{{ t('cd.f_fault_type') }}</label>
+          <select name="fault_type_id" id="edit-fault">
+            {% for ft in fault_types %}
+            {% set is_other = ft.name in ['أخرى', 'اخرى', 'أخري', 'غير ذلك', 'other', 'Other'] %}
+            <option value="{{ ft.id }}" data-other="{{ '1' if is_other else '0' }}"
+                    {{ 'selected' if c.fault_type_id == ft.id else '' }}>{{ ft.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div id="edit-other-wrap" style="display:none">
+          <label class="f">{{ t('cd.fault_other_label') }}</label>
+          <input name="fault_type_other" id="edit-other" value="{{ c.fault_type_other or '' }}">
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="f">{{ t('cd.f_extra_notes') }}</label>
+          <input name="extra_notes" value="{{ c.extra_notes or '' }}">
+        </div>
+        <button class="btn btn-outline" style="grid-column:1/-1">{{ t('cd.edit_save') }}</button>
+      </form>
+      <script>
+        (function () {
+          var fs = document.getElementById('edit-fault');
+          var w = document.getElementById('edit-other-wrap');
+          var oi = document.getElementById('edit-other');
+          function sync() {
+            var opt = fs.selectedOptions[0];
+            var isOther = opt && opt.dataset.other === '1';
+            w.style.display = isOther ? 'block' : 'none';
+            oi.required = !!isOther;
+          }
+          fs.addEventListener('change', sync); sync();
+        })();
+      </script>
+      <hr class="hr">
+      <form method="post" action="/complaints/{{ c.id }}/note">
+        <label class="f">{{ t('cd.internal_note') }}</label>
+        <textarea name="note" style="min-height:70px" placeholder="{{ t('cd.internal_note_ph') }}"></textarea>
+        <button class="btn btn-primary btn-sm mt">{{ t('cd.add_note') }}</button>
+      </form>
+      <hr class="hr">
+      <form method="post" action="/complaints/{{ c.id }}/attachments" enctype="multipart/form-data">
+        <label class="f">{{ t('cd.add_attachment') }}</label>
+        <input type="file" name="file" accept="image/*,video/mp4,video/webm,video/quicktime">
+        <button class="btn btn-primary btn-sm mt">{{ t('cd.upload') }}</button>
+      </form>
+    </div>
+
+    {% if is_admin_area %}
+    <div class="card mb">
+      <div class="section-title">🖥️ {{ t('cd.audit') }}</div>
+      {% if c.closed_by_user %}<div class="small muted mb">{{ t('cd.last_closed_by') }} <b>{{ c.closed_by_user }}</b></div>{% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Timeline -->
+    <div class="card">
+      <div class="section-title">⏱️ {{ t('cd.events') }}</div>
+      <div class="timeline">
+        {% for e in events %}
+        <div class="tl-item">
+          <div class="dot"></div>
+          <div class="t">
+            {% if e.action == 'created' %}📩 {{ t('cd.ev_created') }}
+            {% elif e.action == 'status_change' %}🔁 {{ t('cd.ev_status') }} {{ status_ar(e.from_value) }} ← {{ status_ar(e.to_value) }}
+            {% elif e.action == 'attachment' %}📎 {{ t('cd.ev_attachment') }}
+            {% elif e.action == 'internal_note' %}📝 {{ t('cd.ev_note') }}
+            {% else %}{{ t('cd.ev_update') }}{% endif %}
+          </div>
+          <div class="s">{{ fmt_dt(e.created_at) }} — {{ t('cd.ev_by') }} {{ e.user_name or t('cd.system') }}
+            {% if e.notes %}<br>{{ e.notes }}{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

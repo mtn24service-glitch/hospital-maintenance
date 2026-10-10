@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ t('login.title') }}{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="card" style="padding:26px">
+    <div style="text-align:center;margin-bottom:16px">
+      <img src="/static/img/jazan-cluster-logo.png" alt="logo" style="height:54px;border-radius:10px">
+      <h2 style="margin:10px 0 2px">{{ t('brand.name') }}</h2>
+      <div class="muted small">{{ t('brand.hospital') }}</div>
+    </div>
+    <div class="alert alert-info" style="text-align:center">🔒 {{ t('login.admin_only') }}</div>
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/login">
+      <input type="hidden" name="next" value="{{ next or '/' }}">
+      <div class="mb">
+        <label class="f">{{ t('login.username') }}</label>
+        <input name="username" autocomplete="username" required autofocus>
+      </div>
+      <div class="mb">
+        <label class="f">{{ t('login.password') }}</label>
+        <input type="password" name="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;padding:12px">{{ t('login.submit') }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

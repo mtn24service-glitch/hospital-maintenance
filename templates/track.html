@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ t('track.title') }} {{ c.ticket_no }}{% endblock %}
+{% block content %}
+{% set pmeta = prio_ar %}
+<div class="card" style="max-width:720px;margin:24px auto">
+  <div class="row-between">
+    <h2 class="page-title">🔎 {{ t('track.title') }} <span class="ticket" style="direction:ltr">{{ c.ticket_no }}</span></h2>
+    <a href="/" class="btn btn-outline btn-sm">{{ t('btn.back') }}</a>
+  </div>
+
+  <div class="row" style="align-items:flex-start;gap:20px;flex-wrap:wrap">
+    <table class="tbl" style="flex:1;min-width:280px">
+      <tr><td class="b" style="width:40%">{{ t('form.department') }}</td><td>{{ c.department }}</td></tr>
+      <tr><td class="b">{{ t('form.location_section') }}</td><td>{{ c.location_text or '—' }}</td></tr>
+      <tr><td class="b">{{ t('form.fault_type') }}</td><td>{{ c.fault_type }}{% if c.specialty %} ({{ c.specialty }}){% endif %}</td></tr>
+      <tr><td class="b">{{ t('form.priority') }}</td><td>{{ pmeta.get(c.priority, c.priority) }}</td></tr>
+      <tr><td class="b">{{ t('form.title_field') }}</td><td>{{ c.title or '—' }}</td></tr>
+      <tr><td class="b">{{ t('form.description') }}</td><td style="white-space:pre-wrap">{{ c.description }}</td></tr>
+      <tr><td class="b">⏱️</td><td>{{ fmt_dt(c.created_at) }}</td></tr>
+    </table>
+    <div style="text-align:center">
+      <img src="/qr/{{ c.ticket_no }}.png" alt="QR" style="width:120px;height:120px;border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff">
+      <div class="small muted" style="max-width:120px">{{ t('cd.qr_hint') }}</div>
+      <a href="/card/{{ c.ticket_no }}" target="_blank" class="btn btn-outline btn-xs mt">🖨️ {{ t('success.print') }}</a>
+    </div>
+  </div>
+
+  <div class="section-title mt">⏱️ {{ t('track.timeline') }}</div>
+  <div class="timeline">
+    {% for e in events %}
+    <div class="tl-item">
+      <div class="dot"></div>
+      <div class="t">
+        {% if e.action == 'created' %}📩 {% if lang == 'ar' %}تم إرسال البلاغ{% else %}Complaint submitted{% endif %}
+        {% elif e.action == 'status_change' %}
+          {% if e.to_value == 'received' %}📥 {{ status_ar(e.to_value) }}
+          {% elif e.to_value == 'in_progress' %}👷 {{ status_ar(e.to_value) }}
+          {% elif e.to_value == 'waiting_parts' %}⏳ {{ status_ar(e.to_value) }}
+          {% elif e.to_value == 'completed' %}🛠️ {{ status_ar(e.to_value) }}
+          {% elif e.to_value == 'verified' %}✔️ {{ status_ar(e.to_value) }}
+          {% elif e.to_value == 'closed' %}🔒 {{ status_ar(e.to_value) }}
+          {% elif e.to_value == 'cancelled' %}🚫 {{ status_ar(e.to_value) }}
+          {% else %}{{ status_ar(e.to_value) }}
+          {% endif %}
+        {% elif e.action == 'attachment' %}📎 {{ e.notes }}
+        {% else %}{{ e.notes or e.action }}
+        {% endif %}
+      </div>
+      <div class="s">{{ fmt_dt(e.created_at) }}
+        {% if e.action == 'status_change' and e.from_value and e.to_value %}
+        ({{ status_ar(e.from_value) }} ← {{ status_ar(e.to_value) }})
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="muted">—</div>
+    {% endfor %}
+  </div>
+
+  {% if c.status in ['completed','verified','closed'] %}
+  <div class="alert alert-success mt">{% if lang == 'ar' %}الإصلاح مكتمل وتم التحقق منه — شكراً لتعاونكم.{% else %}Repair completed and verified — thank you.{% endif %}</div>
+  {% elif c.status == 'cancelled' %}
+  <div class="alert alert-warn mt">{% if lang == 'ar' %}تم إلغاء هذا البلاغ{% else %}This complaint was cancelled{% endif %}{% if c.cancel_reason %}: {{ c.cancel_reason }}{% endif %}.</div>
+  {% elif c.status == 'waiting_parts' %}
+  <div class="alert alert-info mt">{% if lang == 'ar' %}بانتظار توفير القطع أو وصول الجهة المختصة.{% else %}Waiting for parts or a specialised party.{% endif %}</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.report') }}{% endblock %}
+{% block content %}
+{% set prios = prio_ar %}
+{% set fv = form if form is defined else {} %}
+
+<div class="row-between" style="margin-bottom:14px">
+  <h2 class="page-title">📝 {{ t('form.title') }}</h2>
+  <a href="/" class="btn btn-outline btn-sm">{{ t('nav.home') }}</a>
+</div>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+<form method="post" action="/report" enctype="multipart/form-data" id="report-form">
+  <div class="card mb">
+    <div class="section-title">👤 {{ t('form.reporter_section') }}</div>
+    <div class="form-grid">
+      <div>
+        <label class="f">{{ t('form.reporter_name') }} <span style="color:#dc2626">*</span></label>
+        <input name="reporter_name" id="r_name" required
+               value="{{ user.full_name if user else '' }}" placeholder="{{ t('form.reporter_name') }}">
+      </div>
+      <div>
+        <label class="f">{{ t('form.reporter_contact') }} <span style="color:#dc2626">*</span></label>
+        <input name="reporter_contact" id="r_contact" required
+               value="{{ user.phone if user else '' }}" placeholder="05XXXXXXXX" inputmode="tel">
+      </div>
+      <div>
+        <label class="f">{{ t('form.reporter_email') }} ({{ t('common.optional') }})</label>
+        <input type="email" name="reporter_email" placeholder="name@example.com">
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="section-title">🏥 {{ t('form.location_section') }}</div>
+    <div class="form-grid">
+      <div>
+        <label class="f">{{ t('form.department') }} <span style="color:#dc2626">*</span></label>
+        <select name="department" id="dept" required>
+          <option value="">— {{ t('form.department') }} —</option>
+          {% for d in departments %}
+          <option value="{{ d.name }}">{{ d.name }}{% if d.building %} ({{ d.building }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="f">{{ t('form.building') }}</label>
+        <input name="building" id="building">
+      </div>
+      <div>
+        <label class="f">{{ t('form.floor') }}</label>
+        <input name="floor">
+      </div>
+      <div>
+        <label class="f">{{ t('form.room') }}</label>
+        <input name="room" id="room">
+      </div>
+    </div>
+    <p class="help mt" id="dup-warning" style="display:none"></p>
+  </div>
+
+  <div class="card mb">
+    <div class="section-title">🔧 {{ t('form.detail_section') }}</div>
+    <div class="form-grid">
+      <div>
+        <label class="f">{{ t('form.fault_type') }} <span style="color:#dc2626">*</span></label>
+        <select name="fault_type_id" id="fault_type" required>
+          <option value="">— {{ t('form.fault_type') }} —</option>
+          {% for ft in fault_types %}
+          {% set is_other = ft.name in ['أخرى', 'اخرى', 'أخري', 'غير ذلك', 'other', 'Other'] %}
+          <option value="{{ ft.id }}" data-specialty="{{ ft.specialty_name or '' }}"
+                  data-specialty-id="{{ ft.specialty_id or '' }}" data-priority="{{ ft.priority }}"
+                  data-other="{{ '1' if is_other else '0' }}"
+                  {{ 'selected' if fv.get('fault_type_id') == ft.id else '' }}>
+            {{ ft.name }}{% if ft.specialty_name %} ← {{ ft.specialty_name }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div id="fault-other-wrap" style="display:none">
+        <label class="f">{{ t('form.fault_other') }} <span style="color:#dc2626">*</span></label>
+        <input name="fault_type_other" id="fault_other"
+               placeholder="{{ t('form.fault_other_ph') }}"
+               value="{{ fv.get('fault_type_other', '') }}">
+      </div>
+      <div>
+        <label class="f">{{ t('form.priority') }} <span style="color:#dc2626">*</span></label>
+        <select name="priority" id="priority" required>
+          {% for key, ar, _ in priorities %}
+          <option value="{{ key }}">{{ ar }}{% if key == 'critical' %} ⚠️{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="f">{{ t('form.title_field') }} ({{ t('common.optional') }})</label>
+        <input name="title" id="title">
+      </div>
+    </div>
+    <div class="mt">
+      <label class="f">{{ t('form.description') }} <span style="color:#dc2626">*</span></label>
+      <textarea name="description" id="description" required minlength="10"
+                placeholder="{{ t('form.description_ph') }}"></textarea>
+    </div>
+
+    <div class="form-grid mt">
+      <div>
+        <label class="f">{{ t('form.safety') }}</label>
+        <select name="affects_safety" id="affects_safety">
+          <option value="">{% if lang == 'ar' %}لا أعرف / لا{% else %}No / not sure{% endif %}</option>
+          <option value="1">{% if lang == 'ar' %}نعم — يشكّل خطراً على سلامة المرضى{% else %}Yes — patient safety risk{% endif %}</option>
+        </select>
+      </div>
+      <div>
+        <label class="f">{{ t('form.continuity') }}</label>
+        <select name="affects_continuity">
+          <option value="">{% if lang == 'ar' %}لا أعرف / لا{% else %}No / not sure{% endif %}</option>
+          <option value="1">{% if lang == 'ar' %}نعم — يوقف خدمة أو عملاً حيوياً{% else %}Yes — stops a critical service{% endif %}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt">
+      <label class="f">{{ t('form.extra_notes') }} ({{ t('common.optional') }})</label>
+      <textarea name="extra_notes" style="min-height:70px"></textarea>
+    </div>
+
+    <div class="mt">
+      <label class="f">{{ t('form.attachments') }} ({{ t('common.optional') }} — 15 MB)</label>
+      <input type="file" name="attachments" multiple accept="image/*,video/mp4,video/webm,video/quicktime">
+      <p class="help">JPG/PNG/GIF/WebP · MP4/WebM/MOV/MKV</p>
+    </div>
+  </div>
+
+  <div class="card mb alert-warn">
+    ⚠️ <b>{% if lang == 'ar' %}تنبيه{% else %}Notice{% endif %}:</b>
+    {% if lang == 'ar' %}هذا النظام لا يحل محل إجراءات الطوارئ المعتمدة.{% else %}This system does not replace approved emergency procedures.{% endif %}
+  </div>
+
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <div class="small muted">HM-{{ now().year }}-•••••</div>
+    <button type="submit" id="submit-btn" class="btn btn-primary" style="font-size:16px;padding:12px 30px">
+      🚀 {{ t('form.submit') }}
+    </button>
+  </div>
+</form>
+
+<script>
+  var faultSel = document.getElementById('fault_type');
+  var specInput = document.getElementById('specialty');
+  var prioSel = document.getElementById('priority');
+  var otherWrap = document.getElementById('fault-other-wrap');
+  var otherInput = document.getElementById('fault_other');
+
+  function syncOther() {
+    var opt = faultSel.selectedOptions[0];
+    var isOther = opt && opt.dataset.other === '1';
+    otherWrap.style.display = isOther ? 'block' : 'none';
+    otherInput.required = !!isOther;
+    if (!isOther) otherInput.value = '';
+  }
+  faultSel.addEventListener('change', function () {
+    var opt = this.selectedOptions[0];
+    if (opt) {
+      var sp = document.getElementById('specialty-auto');
+      if (opt.dataset.priority && !window.__priorityTouched) prioSel.value = opt.dataset.priority;
+    }
+    syncOther();
+  });
+  prioSel.addEventListener('change', function () { window.__priorityTouched = true; });
+  document.getElementById('dept').addEventListener('change', function () {
+    var opt = this.selectedOptions[0];
+    if (opt && opt.text.includes('(')) {
+      var b = opt.text.match(/\(([^)]+)\)/);
+      if (b && !document.getElementById('building').value) document.getElementById('building').value = b[1];
+    }
+  });
+  syncOther();
+
+  document.getElementById('report-form').addEventListener('submit', function () {
+    var btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ ...';
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+# Local secrets and runtime data - never commit
+.env
+*.db
+*.sqlite3
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Uploaded attachments (local development)
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Runtime data (auto-exported live Excel snapshot, etc.)
+data/*
+!data/.gitkeep
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

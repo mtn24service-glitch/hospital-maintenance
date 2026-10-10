@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block title %}{{ t('set.title') }}{% endblock %}
+{% block content %}
+{% set prios = prio_ar %}
+<h2 class="page-title">⚙️ {{ t('set.page') }}</h2>
+<p class="muted small mb">{{ t('set.intro') }}</p>
+
+<div class="tabs">
+  <a href="/settings?tab=general" class="tab {{ 'active' if tab == 'general' else '' }}">🏛️ {{ t('set.general') }}</a>
+  <a href="/settings?tab=departments" class="tab {{ 'active' if tab == 'departments' else '' }}">🏥 {{ t('set.departments') }}</a>
+  <a href="/settings?tab=specialties" class="tab {{ 'active' if tab == 'specialties' else '' }}">👷 {{ t('set.specialties') }}</a>
+  <a href="/settings?tab=faults" class="tab {{ 'active' if tab == 'faults' else '' }}">🔧 {{ t('set.faults') }}</a>
+  <a href="/settings?tab=technicians" class="tab {{ 'active' if tab == 'technicians' else '' }}">👨‍🔧 {{ t('set.technicians') }}</a>
+  {% if is_admin_area %}
+  <a href="/settings?tab=users" class="tab {{ 'active' if tab == 'users' else '' }}">👥 {{ t('set.users') }}</a>
+  {% endif %}
+  <a href="/settings?tab=sla" class="tab {{ 'active' if tab == 'sla' else '' }}">⏰ {{ t('set.sla') }}</a>
+  <a href="/settings?tab=notifications" class="tab {{ 'active' if tab == 'notifications' else '' }}">🔔 {{ t('set.tab_notifications') }}</a>
+</div>
+
+<!-- ================= GENERAL ================= -->
+{% if tab == 'general' %}
+{% if request.query_params.get('reset') == 'done' %}
+<div class="alert alert-success">{{ t('set.reset_ok') }}</div>
+{% elif request.query_params.get('reset') == 'badword' %}
+<div class="alert alert-error">{{ t('set.reset_bad') }}</div>
+{% endif %}
+<div class="card mb">
+  <div class="section-title">🏛️ {{ t('set.general_info') }}</div>
+  <form method="post" action="/settings/general" class="form-grid">
+    <div style="grid-column:1/-1">
+      <label class="f">{{ t('set.hospital_name') }}</label>
+      <input name="hospital_name" value="{{ hospital_name }}" placeholder="مستشفى الأمير محمد بن ناصر — جازان">
+    </div>
+    <div style="grid-column:1/-1"><button class="btn btn-primary">{{ t('btn.save') }}</button></div>
+  </form>
+</div>
+
+<div class="card" style="border:1px solid #fecaca">
+  <div class="section-title" style="color:#dc2626">☠️ {{ t('set.danger') }}</div>
+  <p class="small">{{ t('set.reset_hint') }}</p>
+  <form method="post" action="/settings/reset"
+        onsubmit="return confirm({{ t('set.reset_confirm_title')|tojson }})">
+    <label class="f">{{ t('set.reset_confirm') }}</label>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <input name="confirm" placeholder="تصفير" style="max-width:200px">
+      <button class="btn btn-danger">🗑️ {{ t('set.reset') }}</button>
+    </div>
+  </form>
+</div>
+
+<!-- ================= DEPARTMENTS ================= -->
+{% elif tab == 'departments' %}
+<div class="card">
+  <div class="section-title">{{ t('set.add_department') }}</div>
+  <form method="post" action="/settings/departments/add" class="form-grid">
+    <div><label class="f">{{ t('set.dept_name') }} <span style="color:#dc2626">*</span></label><input name="name" required placeholder="{{ t('set.dept_name_ph') }}"></div>
+    <div><label class="f">{{ t('set.building') }}</label><input name="building" placeholder="{{ t('set.building_ph') }}"></div>
+    <div><label class="f">{{ t('set.floor') }}</label><input name="floor" placeholder="{{ t('set.floor_ph') }}"></div>
+    <div style="align-self:end"><button class="btn btn-primary" style="width:100%">{{ t('set.add_btn') }}</button></div>
+  </form>
+  <hr class="hr">
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>{{ t('set.th_dept') }}</th><th>{{ t('set.th_building') }}</th><th>{{ t('set.th_floor') }}</th><th>{{ t('set.th_active') }}</th><th>{{ t('set.th_edit') }}</th></tr></thead>
+      <tbody>
+        {% for d in departments %}
+        {% set fid = 'dep-' ~ d.id %}
+        <tr>
+          <form id="{{ fid }}" method="post" action="/settings/departments/update"></form>
+          <td><input name="name" value="{{ d.name }}" required form="{{ fid }}"></td>
+          <td><input name="building" value="{{ d.building or '' }}" form="{{ fid }}"></td>
+          <td><input name="floor" value="{{ d.floor or '' }}" form="{{ fid }}"></td>
+          <td><select name="active" form="{{ fid }}"><option value="1" {{ 'selected' if d.active else '' }}>{{ t('common.active') }}</option><option value="0" {{ 'selected' if not d.active else '' }}>{{ t('common.inactive') }}</option></select></td>
+          <td class="row">
+            <button form="{{ fid }}" class="btn btn-outline btn-xs">{{ t('set.save_btn') }}</button>
+            <button form="{{ fid }}" formaction="/settings/departments/delete" formmethod="post"
+                    onclick="return confirm({{ t('set.confirm_del_dept')|tojson }})" class="btn btn-danger btn-xs">{{ t('btn.delete') }}</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= SPECIALTIES ================= -->
+{% elif tab == 'specialties' %}
+<div class="card">
+  <div class="section-title">{{ t('set.add_specialty') }}</div>
+  <form method="post" action="/settings/specialties/add" class="form-grid">
+    <div><label class="f">{{ t('set.specialty_name') }} <span style="color:#dc2626">*</span></label><input name="name" required placeholder="{{ t('set.specialty_name_ph') }}"></div>
+    <div style="align-self:end"><button class="btn btn-primary" style="width:100%">{{ t('set.add_btn') }}</button></div>
+  </form>
+  <hr class="hr">
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>{{ t('set.th_specialty') }}</th><th>{{ t('set.th_active') }}</th><th>{{ t('set.th_action') }}</th></tr></thead>
+      <tbody>
+        {% for s in specialties %}
+        {% set fid = 'spec-' ~ s.id %}
+        <tr>
+          <form id="{{ fid }}" method="post" action="/settings/specialties/update"></form>
+          <td><input name="name" value="{{ s.name }}" required form="{{ fid }}"></td>
+          <td><select name="active" form="{{ fid }}"><option value="1" {{ 'selected' if s.active else '' }}>{{ t('common.active') }}</option><option value="0" {{ 'selected' if not s.active else '' }}>{{ t('common.inactive') }}</option></select></td>
+          <td class="row">
+            <button form="{{ fid }}" class="btn btn-outline btn-xs">{{ t('set.save_btn') }}</button>
+            <button form="{{ fid }}" formaction="/settings/specialties/delete" formmethod="post"
+                    onclick="return confirm({{ t('set.confirm_del_specialty')|tojson }})" class="btn btn-danger btn-xs">{{ t('btn.delete') }}</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= FAULT TYPES ================= -->
+{% elif tab == 'faults' %}
+<div class="card">
+  <div class="section-title">{{ t('set.add_fault') }}</div>
+  <form method="post" action="/settings/faults/add" class="form-grid">
+    <div><label class="f">{{ t('set.fault_name') }} <span style="color:#dc2626">*</span></label><input name="name" required placeholder="{{ t('set.fault_name_ph') }}"></div>
+    <div><label class="f">{{ t('set.fault_specialty') }}</label>
+      <select name="specialty_id"><option value="">{{ t('common.none_dash') }}</option>
+        {% for s in specialties %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+      </select></div>
+    <div><label class="f">{{ t('set.fault_priority') }}</label>
+      <select name="priority">{% for p, ar, _ in priorities %}<option value="{{ p }}">{{ ar }}</option>{% endfor %}</select></div>
+    <div><label class="f">{{ t('set.fault_sla') }}</label><input name="sla_hours" placeholder="{{ t('set.fault_sla_ph') }}"></div>
+    <div style="align-self:end;grid-column:1/-1"><button class="btn btn-primary">{{ t('set.add_btn') }}</button></div>
+  </form>
+  <hr class="hr">
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>{{ t('set.th_fault') }}</th><th>{{ t('set.th_specialty') }}</th><th>{{ t('set.th_priority') }}</th><th>{{ t('set.th_sla_hours') }}</th><th>{{ t('set.th_active') }}</th><th>{{ t('set.th_action') }}</th></tr></thead>
+      <tbody>
+        {% for ft in fault_types %}
+        {% set fid = 'ft-' ~ ft.id %}
+        <tr>
+          <form id="{{ fid }}" method="post" action="/settings/faults/update"></form>
+          <td><input name="name" value="{{ ft.name }}" required form="{{ fid }}"></td>
+          <td><select name="specialty_id" form="{{ fid }}"><option value="">—</option>
+            {% for s in specialties %}<option value="{{ s.id }}" {{ 'selected' if ft.specialty_id == s.id else '' }}>{{ s.name }}</option>{% endfor %}
+          </select></td>
+          <td><select name="priority" form="{{ fid }}">{% for p, ar, _ in priorities %}<option value="{{ p }}" {{ 'selected' if ft.priority == p else '' }}>{{ ar }}</option>{% endfor %}</select></td>
+          <td><input name="sla_hours" value="{{ ft.sla_hours or '' }}" style="width:80px" form="{{ fid }}"></td>
+          <td><select name="active" form="{{ fid }}"><option value="1" {{ 'selected' if ft.active else '' }}>{{ t('common.active') }}</option><option value="0" {{ 'selected' if not ft.active else '' }}>{{ t('common.inactive') }}</option></select></td>
+          <td class="row">
+            <button form="{{ fid }}" class="btn btn-outline btn-xs">{{ t('set.save_btn') }}</button>
+            <button form="{{ fid }}" formaction="/settings/faults/delete" formmethod="post"
+                    onclick="return confirm({{ t('set.confirm_del_fault')|tojson }})" class="btn btn-danger btn-xs">{{ t('btn.delete') }}</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= TECHNICIANS ================= -->
+{% elif tab == 'technicians' %}
+<div class="card">
+  <div class="section-title">{{ t('set.add_technician') }}</div>
+  <form method="post" action="/settings/technicians/add" class="form-grid">
+    <div><label class="f">{{ t('set.tech_name') }} <span style="color:#dc2626">*</span></label><input name="name" required placeholder="{{ t('set.tech_name_ph') }}"></div>
+    <div><label class="f">{{ t('set.th_specialty') }}</label><select name="specialty_id"><option value="">{{ t('common.none_dash') }}</option>
+      {% for s in specialties %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></div>
+    <div><label class="f">{{ t('set.tech_phone') }}</label><input name="phone" placeholder="05XXXXXXXX"></div>
+    <div style="align-self:end"><button class="btn btn-primary" style="width:100%">{{ t('set.add_btn') }}</button></div>
+  </form>
+  <hr class="hr">
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>{{ t('set.th_tech') }}</th><th>{{ t('set.th_specialty') }}</th><th>{{ t('set.th_phone') }}</th><th>{{ t('set.th_active') }}</th><th>{{ t('set.th_action') }}</th></tr></thead>
+      <tbody>
+        {% for t in technicians %}
+        {% set fid = 'tech-' ~ t.id %}
+        <tr>
+          <form id="{{ fid }}" method="post" action="/settings/technicians/update"></form>
+          <td><input name="name" value="{{ t.name }}" required form="{{ fid }}"></td>
+          <td><select name="specialty_id" form="{{ fid }}"><option value="">—</option>
+            {% for s in specialties %}<option value="{{ s.id }}" {{ 'selected' if t.specialty_id == s.id else '' }}>{{ s.name }}</option>{% endfor %}</select></td>
+          <td><input name="phone" value="{{ t.phone or '' }}" form="{{ fid }}"></td>
+          <td><select name="active" form="{{ fid }}"><option value="1" {{ 'selected' if t.active else '' }}>{{ t('common.active') }}</option><option value="0" {{ 'selected' if not t.active else '' }}>{{ t('common.inactive') }}</option></select></td>
+          <td class="row">
+            <button form="{{ fid }}" class="btn btn-outline btn-xs">{{ t('set.save_btn') }}</button>
+            <button form="{{ fid }}" formaction="/settings/technicians/delete" formmethod="post"
+                    onclick="return confirm({{ t('set.confirm_del_tech')|tojson }})" class="btn btn-danger btn-xs">{{ t('btn.delete') }}</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= USERS ================= -->
+{% elif tab == 'users' and is_admin_area %}
+<div class="card">
+  <div class="section-title">{{ t('set.add_user') }}</div>
+  <form method="post" action="/settings/users/add" class="form-grid">
+    <div><label class="f">{{ t('set.username') }} <span style="color:#dc2626">*</span></label><input name="username" required></div>
+    <div><label class="f">{{ t('set.password') }} <span style="color:#dc2626">*</span></label><input type="password" name="password" required></div>
+    <div><label class="f">{{ t('set.full_name') }} <span style="color:#dc2626">*</span></label><input name="full_name" required></div>
+    <div><label class="f">{{ t('set.floor') }}</label>
+      <select name="role">{% for r, ar in roles %}<option value="{{ r }}">{{ ar }}</option>{% endfor %}</select></div>
+    <div><label class="f">{{ t('set.user_dept') }}</label><input name="department" placeholder="{{ t('set.user_dept_ph') }}"></div>
+    <div><label class="f">{{ t('set.th_phone') }}</label><input name="phone"></div>
+    <div style="align-self:end;grid-column:1/-1"><button class="btn btn-primary">{{ t('set.create_btn') }}</button></div>
+  </form>
+  <hr class="hr">
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>{{ t('set.th_user') }}</th><th>{{ t('set.th_name') }}</th><th>{{ t('set.th_role') }}</th><th>{{ t('set.th_dept_user') }}</th><th>{{ t('set.th_active') }}</th><th>{{ t('set.th_action') }}</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        {% set fid = 'usr-' ~ u.id %}
+        <tr>
+          <form id="{{ fid }}" method="post" action="/settings/users/update"></form>
+          <td><b>{{ u.username }}</b></td>
+          <td><input name="full_name" value="{{ u.full_name }}" form="{{ fid }}"></td>
+          <td><select name="role" form="{{ fid }}">{% for r, ar in roles %}<option value="{{ r }}" {{ 'selected' if u.role == r else '' }}>{{ ar }}</option>{% endfor %}</select></td>
+          <td><input name="department" value="{{ u.department or '' }}" form="{{ fid }}"></td>
+          <td><select name="active" form="{{ fid }}"><option value="1" {{ 'selected' if u.active else '' }}>{{ t('common.active') }}</option><option value="0" {{ 'selected' if not u.active else '' }}>{{ t('common.inactive') }}</option></select></td>
+          <td class="row">
+            <input type="hidden" name="password" value="" form="{{ fid }}">
+            <button form="{{ fid }}" class="btn btn-outline btn-xs">{{ t('set.save_btn') }}</button>
+            <button form="{{ fid }}" formaction="/settings/users/password" formmethod="post"
+                    onclick="var p=prompt({{ t('set.new_password_prompt')|tojson }}); if(p){this.form.password.value=p; return true;} return false;"
+                    class="btn btn-warn btn-xs">{{ t('set.password_btn') }}</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= SLA ================= -->
+{% elif tab == 'sla' %}
+<div class="card">
+  <div class="section-title">⏰ {{ t('set.sla_title') }}</div>
+  <form method="post" action="/settings/sla" class="form-grid">
+    {% for p, ar, _ in priorities %}
+    <div class="form-sec">
+      <h3>{{ ar }} ({{ p }})</h3>
+      <div class="form-grid">
+        <div><label class="f">{{ t('set.sla_response') }}</label>
+          <input name="resp_{{ p }}" value="{{ sla[p][0] }}" type="number" min="1"></div>
+        <div><label class="f">{{ t('set.sla_resolve') }}</label>
+          <input name="res_{{ p }}" value="{{ sla[p][1] }}" type="number" min="1"></div>
+      </div>
+    </div>
+    {% endfor %}
+    <div style="grid-column:1/-1"><button class="btn btn-primary">{{ t('set.sla_save') }}</button></div>
+  </form>
+  <p class="help">{{ t('set.sla_help') }}</p>
+</div>
+
+<!-- ================= NOTIFICATIONS ================= -->
+{% elif tab == 'notifications' %}
+<div class="card mb">
+  <div class="section-title">🔔 {{ t('set.notif_title') }}</div>
+  {% for ch in notif_channels %}
+  <div class="row-between" style="padding:11px 0;border-bottom:1px solid var(--line)">
+    <div><b>{{ ch.name }}</b><br><span class="small muted">{{ ch.detail }}</span></div>
+    {% if ch.configured %}<span class="pill bg-soft-green">{{ t('common.enabled') }}</span>{% else %}<span class="pill bg-soft-amber">{{ t('common.disabled') }}</span>{% endif %}
+  </div>
+  {% endfor %}
+  <p class="help mt">{{ t('set.notif_help') }}</p>
+</div>
+<div class="card">
+  <div class="section-title">{{ t('set.notif_log') }}</div>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>{{ t('set.th_time') }}</th><th>{{ t('set.th_ticket') }}</th><th>{{ t('set.th_channel') }}</th><th>{{ t('set.th_recipient') }}</th><th>{{ t('set.th_status') }}</th><th>{{ t('set.th_subject') }}</th></tr></thead>
+      <tbody>
+        {% for n in notif_log %}
+        <tr><td class="small">{{ fmt_dt(n.created_at) }}</td>
+          <td>{% if n.ticket_no %}{{ n.ticket_no }}{% else %}—{% endif %}</td>
+          <td>{{ n.channel }}</td><td>{{ n.recipient or '—' }}</td>
+          <td><span class="pill {{ 'bg-soft-green' if n.status == 'sent' else 'bg-soft-red' }}">{{ n.status }}</span></td>
+          <td class="small">{{ n.subject or '' }}</td></tr>
+        {% else %}<tr><td colspan="6" class="muted">{{ t('set.no_log') }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

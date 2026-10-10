@@ -1,0 +1,23 @@
+<div class="controls">
+  <a class="ctrl-btn" href="/set-lang/{{ 'en' if lang == 'ar' else 'ar' }}?next={{ request.url.path }}"
+     title="{{ t('common.language') }}">{{ 'EN' if lang == 'ar' else 'ع' }}</a>
+  <button type="button" class="ctrl-btn" id="theme-toggle"
+          title="{{ t('common.theme') }}" onclick="hmToggleTheme()">
+    <span class="theme-icon">🌙</span>
+  </button>
+</div>
+<script>
+  function hmToggleTheme() {
+    try {
+      var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', cur);
+      localStorage.setItem('hm_theme', cur);
+      hmSyncThemeIcon();
+    } catch (e) {}
+  }
+  function hmSyncThemeIcon() {
+    var el = document.querySelector('#theme-toggle .theme-icon');
+    if (el) el.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+  }
+  hmSyncThemeIcon();
+</script>

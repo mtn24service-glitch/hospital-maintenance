@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.home') }}{% endblock %}
+{% block body_class %}landing-body{% endblock %}
+{% block content %}
+<div class="landing">
+  <div class="big">🛠️ {{ t('brand.name') }}</div>
+  <p class="muted" style="font-size:16px">{{ t('brand.hospital') }}</p>
+  <p style="max-width:640px;margin:14px auto">{{ t('landing.tagline') }}</p>
+
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:22px 0">
+    <a href="/report" class="btn btn-primary" style="font-size:16px;padding:13px 34px">📝 {{ t('landing.report_cta') }}</a>
+    <form method="get" action="/track" style="display:inline-flex;gap:8px;align-items:center">
+      <input name="q" id="track-input" placeholder="{{ t('landing.track_hint') }}">
+      <button type="submit" class="btn btn-outline">{{ t('landing.track_cta') }}</button>
+    </form>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="n">1</div><b>{{ t('landing.feature1.t') }}</b><br><span class="small muted">{{ t('landing.feature1.d') }}</span></div>
+    <div class="step"><div class="n">2</div><b>{{ t('nav.track') }}</b><br><span class="small muted">{{ t('landing.feature2.d') }}</span></div>
+    <div class="step"><div class="n">3</div><b>{{ t('landing.feature3.t') }}</b><br><span class="small muted">{{ t('landing.feature3.d') }}</span></div>
+  </div>
+
+  <div class="card" style="margin-top:26px;text-align:{{ 'right' if lang == 'ar' else 'left' }}">
+    <h3 style="margin-top:0">{% if lang == 'ar' %}ما الذي يمكن الإبلاغ عنه؟{% else %}What can be reported?{% endif %}</h3>
+    <div class="grid grid-3">
+      <div>⚡ {% if lang == 'ar' %}الكهرباء والإنارة{% else %}Electricity & lighting{% endif %}</div>
+      <div>❄️ {% if lang == 'ar' %}التكييف والتبريد{% else %}Air conditioning{% endif %}</div>
+      <div>🚿 {% if lang == 'ar' %}السباكة والصرف{% else %}Plumbing & drainage{% endif %}</div>
+      <div>🚪 {% if lang == 'ar' %}الأبواب والأقفال{% else %}Doors & locks{% endif %}</div>
+      <div>🏗️ {% if lang == 'ar' %}الأعمال المدنية{% else %}Civil works{% endif %}</div>
+      <div>🛗 {% if lang == 'ar' %}المصاعد{% else %}Elevators{% endif %}</div>
+      <div>🚨 {% if lang == 'ar' %}الإنذار والسلامة{% else %}Alarm & safety{% endif %}</div>
+      <div>🪑 {% if lang == 'ar' %}الأثاث والتجهيزات{% else %}Furniture & fittings{% endif %}</div>
+      <div>💉 {% if lang == 'ar' %}الأجهزة والغازات الطبية{% else %}Medical devices & gases{% endif %}</div>
+    </div>
+    <hr class="hr">
+    <p class="small muted">⚠️ {% if lang == 'ar' %}في الحالات التي تشكّل خطراً مباشراً على المرضى أو العاملين، اتصل فوراً بالطوارئ والجهات المختصة بالمشفى — هذا النظام لا يحل محل إجراءات الطوارئ المعتمدة.{% else %}In cases of immediate danger to patients or staff, call the emergency services directly — this system does not replace approved emergency procedures.{% endif %}</p>
+  </div>
+
+  {% if not user %}
+  <p class="muted" style="margin-top:28px">
+    <a href="/login">{{ t('nav.login') }}</a> · <a href="/report">{{ t('nav.report') }}</a>
+  </p>
+  {% endif %}
+</div>
+
+<script>
+  var ti = document.getElementById('track-input');
+  if (ti) {
+    ti.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var v = this.value.trim();
+        if (v) location.href = '/track/' + encodeURIComponent(v);
+      }
+    });
+  }
+  var tf = document.querySelector('form[action^="/track"]');
+  if (tf) tf.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = ti.value.trim();
+    if (v) location.href = '/track/' + encodeURIComponent(v);
+  });
+</script>
+{% endblock %}

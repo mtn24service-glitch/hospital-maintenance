@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ t('success.title') }}{% endblock %}
+{% block content %}
+{% set pmeta = prio_ar %}
+<div class="card" style="max-width:660px;margin:30px auto;text-align:center">
+  <div style="font-size:64px">✅</div>
+  <h2 class="page-title">{{ t('success.title') }}</h2>
+  {% if dup_warning %}
+  <div class="alert alert-warn">{{ dup_warning }}</div>
+  {% endif %}
+  <div class="card" style="background:var(--primary-light);border-color:var(--primary)">
+    <div class="small">{{ t('success.ticket') }}</div>
+    <div class="ticket" style="font-size:30px;direction:ltr">{{ complaint.ticket_no }}</div>
+    <div class="small muted">{{ t('success.hint') }}</div>
+  </div>
+
+  <div class="grid grid-2 mt" style="text-align:{{ 'right' if lang == 'ar' else 'left' }}">
+    <table class="tbl">
+      <tr><td class="b">{{ t('form.department') }}</td><td>{{ complaint.department }}</td></tr>
+      <tr><td class="b">{{ t('form.fault_type') }}</td><td>{{ complaint.fault_type }}</td></tr>
+      <tr><td class="b">{{ t('form.priority') }}</td><td>{{ pmeta.get(complaint.priority, complaint.priority) }}</td></tr>
+      <tr><td class="b">{{ t('form.location_section') }}</td><td>{{ complaint.location_text or '—' }}</td></tr>
+      <tr><td class="b">⏱️</td><td>{{ fmt_dt(complaint.created_at) }}</td></tr>
+    </table>
+    <div style="text-align:center">
+      <img src="/qr/{{ complaint.ticket_no }}.png" alt="QR" style="width:140px;height:140px;border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff">
+      <div class="small muted">{{ t('cd.qr_hint') }}</div>
+    </div>
+  </div>
+
+  <p class="small muted mt">{% if lang == 'ar' %}تم إشعار فريق الصيانة والتشغيل فوراً بهذا البلاغ.{% else %}The maintenance team has been notified instantly.{% endif %}</p>
+
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+    <a href="/track/{{ complaint.ticket_no }}" class="btn btn-primary">🔍 {{ t('success.track') }}</a>
+    <a href="/card/{{ complaint.ticket_no }}" target="_blank" class="btn btn-outline">🖨️ {{ t('success.print') }}</a>
+    <a href="/report" class="btn btn-outline">{{ t('success.another') }}</a>
+  </div>
+</div>
+{% endblock %}

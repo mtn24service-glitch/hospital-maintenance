@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}{{ t('dash.page') }}{% endblock %}
+{% block content %}
+<div class="row-between" style="margin-bottom:14px">
+  <h2 class="page-title">📊 {{ t('dash.page') }}</h2>
+  <div class="row">
+    <span class="live-dot"></span>
+    <span id="live-status" class="small muted" style="color:#16a34a">{{ t('dash.connecting') }}</span>
+  </div>
+</div>
+
+{% set pmeta = prio_ar %}
+{% set critical_new = stats.by_status.get('new', 0) %}
+
+<!-- KPIs -->
+<div class="grid grid-4">
+  <div class="card kpi">
+    <div class="icon bg-green"><span>🛠️</span></div>
+    <div><div class="num t-green">{{ stats.total }}</div><div class="lbl">{{ t('dash.total') }}</div></div>
+  </div>
+  <div class="card kpi">
+    <div class="icon bg-blue"><span>📥</span></div>
+    <div><div class="num t-blue">{{ stats.by_status.get('new', 0) }}</div><div class="lbl">{{ t('dash.new_unreceived') }}</div></div>
+  </div>
+  <div class="card kpi">
+    <div class="icon bg-red"><span>🚨</span></div>
+    <div><div class="num t-red">{{ stats.by_priority.get('critical', 0) }}</div><div class="lbl">{{ t('dash.critical') }}</div></div>
+  </div>
+  <div class="card kpi">
+    <div class="icon bg-amber"><span>✅</span></div>
+    <div><div class="num t-amber">{{ stats.pct }}%</div><div class="lbl">{{ t('dash.completion') }}</div></div>
+  </div>
+  <div class="card kpi">
+    <div class="icon bg-teal"><span>⏱️</span></div>
+    <div><div class="num t-teal">{{ avg_response }}</div><div class="lbl">{{ t('dash.avg_receive_h') }}</div></div>
+  </div>
+  <div class="card kpi">
+    <div class="icon bg-purple"><span>🔧</span></div>
+    <div><div class="num t-purple">{{ avg_resolve }}</div><div class="lbl">{{ t('dash.avg_fix_h') }}</div></div>
+  </div>
+</div>
+
+{% if overdue %}
+<div class="alert alert-error">
+  <b>⏰ {{ t('dash.overdue_title') }} ({{ overdue|length }}):</b>
+  {% for o in overdue[:5] %}
+  <span class="pill bg-soft-red">{{ o.ticket_no }} — {{ o.department }} ({{ o.title or '' }})</span>
+  {% endfor %}
+  {% if overdue|length > 5 %}{{ t('dash.and_more') }}{% endif %}
+</div>
+{% endif %}
+
+<!-- Live new complaints stream -->
+<div class="card mb" id="live-area">
+  <div class="section-title"><span class="live-dot"></span> {{ t('dash.latest_live') }} <span class="pill bg-soft-green">{{ stats.by_status.get('new', 0) }} {{ t('dash.new_word') }}</span></div>
+  <div class="small muted mb" style="display:flex;justify-content:space-between;flex-wrap:wrap">
+    <span>{{ t('dash.live_hint') }}</span>
+    <button class="btn btn-outline btn-xs" onclick="window.hm.toast({{ t('dash.live_on_toast')|tojson }},'info')">⚙️</button>
+  </div>
+  <div id="live-feed"></div>
+</div>
+
+<!-- Filters -->
+<form method="get" action="/dashboard" class="card mb filters">
+  <div class="f-item"><label>{{ t('dash.f_status') }}</label>
+    <select name="status">
+      <option value="all" {{ 'selected' if filters.status == 'all' else '' }}>{{ t('dash.all') }}</option>
+      {% for s, ar, _ in statuses %}<option value="{{ s }}" {{ 'selected' if filters.status == s else '' }}>{{ ar }}</option>{% endfor %}
+      <option value="cancelled" {{ 'selected' if filters.status == 'cancelled' else '' }}>{{ t('status.cancelled') }}</option>
+    </select></div>
+  <div class="f-item"><label>{{ t('dash.f_priority') }}</label>
+    <select name="priority">
+      <option value="all">{{ t('dash.all') }}</option>
+      {% for p, ar, _ in priorities %}<option value="{{ p }}" {{ 'selected' if filters.priority == p else '' }}>{{ ar }}</option>{% endfor %}
+    </select></div>
+  <div class="f-item"><label>{{ t('dash.f_dept') }}</label>
+    <select name="department">
+      <option value="all">{{ t('dash.all') }}</option>
+      {% for d in departments %}<option value="{{ d.name }}" {{ 'selected' if filters.department == d.name else '' }}>{{ d.name }}</option>{% endfor %}
+    </select></div>
+  <div class="f-item"><label>{{ t('dash.f_specialty') }}</label>
+    <select name="specialty">
+      <option value="all">{{ t('dash.all') }}</option>
+      {% for s in specialties %}<option value="{{ s.name }}" {{ 'selected' if filters.specialty == s.name else '' }}>{{ s.name }}</option>{% endfor %}
+    </select></div>
+  <div class="f-item"><label>{{ t('dash.f_search') }}</label><input name="q" value="{{ filters.q or '' }}" placeholder="{{ t('dash.f_search_ph') }}"></div>
+  <div class="f-item"><label>{{ t('dash.f_from') }}</label><input type="date" name="date_from" value="{{ filters.date_from or '' }}"></div>
+  <div class="f-item"><label>{{ t('dash.f_to') }}</label><input type="date" name="date_to" value="{{ filters.date_to or '' }}"></div>
+  <div class="f-item"><label>{{ t('dash.f_data') }}</label>
+    <select name="demo">
+      <option value="real" {{ 'selected' if filters.demo == 'real' else '' }}>{{ t('dash.data_real') }}</option>
+      <option value="demo" {{ 'selected' if filters.demo == 'demo' else '' }}>{{ t('dash.data_demo') }}</option>
+      <option value="all" {{ 'selected' if filters.demo == 'all' else '' }}>{{ t('dash.all') }}</option>
+    </select></div>
+  <button type="submit" class="btn btn-primary">{{ t('dash.filter') }}</button>
+  <a href="/dashboard" class="btn btn-outline">{{ t('dash.clear') }}</a>
+</form>
+
+<!-- Complaints table -->
+<div class="card">
+  <div class="row-between mb">
+    <div class="section-title" style="margin:0">{{ t('dash.complaints') }} ({{ total }})</div>
+    <div class="row">
+      <a href="/reports/export/excel?status={{ filters.status }}&priority={{ filters.priority }}&department={{ filters.department }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q }}"
+         class="btn btn-outline btn-sm">📥 Excel</a>
+      <a href="/reports/export/pdf?status={{ filters.status }}&priority={{ filters.priority }}&department={{ filters.department }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&q={{ filters.q }}"
+         class="btn btn-outline btn-sm">📄 PDF</a>
+      <a href="/reports/export/live" class="btn btn-outline btn-sm">🌳 {{ t('rep.live_excel') }}</a>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="tbl" id="complaints-table">
+      <thead>
+        <tr>
+          <th>{{ t('dash.th_ticket') }}</th><th>{{ t('dash.th_time') }}</th><th>{{ t('dash.th_dept') }}</th><th>{{ t('dash.th_type') }}</th>
+          <th>{{ t('dash.th_priority') }}</th><th>{{ t('dash.th_status') }}</th><th>{{ t('dash.th_tech') }}</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in complaints %}
+        <tr id="row-{{ c.id }}" class="{{ 'crit-row' if c.priority == 'critical' and c.status not in ['closed','cancelled'] else '' }}">
+          <td><a href="/complaints/{{ c.id }}" class="ticket" style="direction:ltr">{{ c.ticket_no }}</a>
+            {% if c.is_demo %}<span class="pill bg-soft-gray">{{ t('dash.demo_pill') }}</span>{% endif %}
+          </td>
+          <td class="small">{{ fmt_dt(c.created_at) }}</td>
+          <td>{{ c.department }}{% if c.location_text %}<br><span class="small muted">{{ c.location_text }}</span>{% endif %}</td>
+          <td>{{ c.fault_type }}</td>
+          <td><span class="pill {{ {'critical':'bg-soft-red','high':'bg-soft-orange','medium':'bg-soft-amber','low':'bg-soft-green'}.get(c.priority, 'bg-soft-gray') }}">{{ pmeta.get(c.priority, c.priority) }}</span></td>
+          <td><span class="pill {{ {'new':'bg-soft-blue','received':'bg-soft-cyan','in_progress':'bg-soft-purple','waiting_parts':'bg-soft-amber','completed':'bg-soft-green','verified':'bg-soft-teal','closed':'bg-soft-gray','cancelled':'bg-soft-red'}.get(c.status, 'bg-soft-gray') }}">{{ status_ar(c.status) }}</span></td>
+          <td class="small">{{ c.assigned_technician or '—' }}</td>
+          <td><a href="/complaints/{{ c.id }}" class="btn btn-outline btn-xs">{{ t('btn.open') }}</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="muted" style="text-align:center">{{ t('dash.no_match') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pages > 1 %}
+  <div class="pager">
+    {% if page > 1 %}<a href="?page={{ page-1 }}&status={{ filters.status }}&priority={{ filters.priority }}&department={{ filters.department }}&specialty={{ filters.specialty }}&q={{ filters.q }}">{{ t('dash.prev') }}</a>{% endif %}
+    <span>{{ t('dash.page_word') }} {{ page }} {{ t('dash.of_word') }} {{ pages }}</span>
+    {% if page < pages %}<a href="?page={{ page+1 }}&status={{ filters.status }}&priority={{ filters.priority }}&department={{ filters.department }}&specialty={{ filters.specialty }}&q={{ filters.q }}">{{ t('dash.next') }}</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Charts -->
+<div class="grid grid-3 mt">
+  <div class="card"><div class="section-title">{{ t('dash.chart_dept') }}</div><canvas id="chart-dept" height="120"></canvas></div>
+  <div class="card"><div class="section-title">{{ t('dash.chart_type') }}</div><canvas id="chart-type" height="120"></canvas></div>
+  <div class="card"><div class="section-title">{{ t('dash.chart_time') }}</div><canvas id="chart-time" height="120"></canvas></div>
+</div>
+
+<div class="grid grid-2 mt">
+  <div class="card">
+    <div class="section-title">{{ t('dash.tech_perf') }}</div>
+    <table class="tbl">
+      <thead><tr><th>{{ t('dash.th_tech') }}</th><th>{{ t('dash.th_total') }}</th><th>{{ t('dash.th_done') }}</th><th>{{ t('dash.th_open') }}</th><th>{{ t('dash.th_pct') }}</th></tr></thead>
+      <tbody>
+        {% for t in tech_perf %}
+        <tr><td class="b">{{ t.name }}</td><td>{{ t.total }}</td><td>{{ t.done }}</td><td>{{ t.open }}</td>
+          <td><div style="background:var(--line);border-radius:8px;height:10px;width:100%"><div style="background:var(--primary);height:10px;border-radius:8px;width:{{ t.pct }}%"></div></div></td>
+        </tr>
+        {% else %}<tr><td colspan="5" class="muted">{{ t('dash.no_data') }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="section-title">{{ t('dash.notif_channels') }}</div>
+    {% for ch in notif_channels %}
+    <div class="row-between" style="padding:9px 0;border-bottom:1px solid var(--line)">
+      <div><b>{{ ch.name }}</b><br><span class="small muted">{{ ch.detail }}</span></div>
+      {% if ch.configured %}<span class="pill bg-soft-green">{{ t('common.enabled') }}</span>{% else %}<span class="pill bg-soft-amber">{{ t('common.disabled') }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+<script>
+  window.chartData = {
+    departments: {{ chart_departments | tojson }},
+    types: {{ chart_types | tojson }},
+    overTime: {{ over_time | tojson }},
+    priority: {{ chart_priority | tojson }}
+  };
+  window.chartLabels = {
+    dept: '{{ t('dash.js_dept') }}', type: '{{ t('dash.js_type') }}', time: '{{ t('dash.js_time') }}'
+  };
+</script>
+{% endblock %}

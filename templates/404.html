@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}404{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:80px auto;text-align:center">
+  <div style="font-size:60px">🔍</div>
+  <h2>404</h2>
+  <p class="muted">{{ t('track.notfound') }}</p>
+  <a href="/" class="btn btn-primary">{{ t('nav.home') }}</a>
+</div>
+{% endblock %}

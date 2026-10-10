@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ c.ticket_no }}{% endblock %}
+{% block body_class %}card-body{% endblock %}
+{% block content %}
+{% set pmeta = prio_ar %}
+<div class="print-toolbar no-print">
+  <button class="btn btn-primary" onclick="window.print()">🖨️ {{ t('btn.print') }}</button>
+  <a href="/track/{{ c.ticket_no }}" class="btn btn-outline">{{ t('btn.back') }}</a>
+</div>
+
+<div class="print-card">
+  <div class="pc-head">
+    <img src="/static/img/jazan-cluster-logo.png" alt="logo" class="pc-logo">
+    <div class="pc-hosp">
+      <b>{{ t('brand.hospital') }}</b>
+      <span>{{ t('brand.name') }}</span>
+    </div>
+    <img src="/static/img/jazan-cluster-logo.png" alt="logo" class="pc-logo">
+  </div>
+  <h2 class="pc-title">{% if lang == 'ar' %}بطاقة بلاغ صيانة{% else %}Maintenance Complaint Card{% endif %}</h2>
+
+  <div class="pc-body">
+    <table class="pc-table">
+      <tr><th>{{ t('cd.title') }}</th><td>{{ c.ticket_no }}</td></tr>
+      <tr><th>{{ t('form.department') }}</th><td>{{ c.department }}</td></tr>
+      <tr><th>{{ t('form.location_section') }}</th><td>{{ c.location_text or '—' }}</td></tr>
+      <tr><th>{{ t('form.fault_type') }}</th><td>{{ c.fault_type }}</td></tr>
+      <tr><th>{{ t('form.priority') }}</th><td>{{ pmeta.get(c.priority, c.priority) }}</td></tr>
+      <tr><th>{{ t('nav.dashboard') }}</th><td>{{ status_ar(c.status) }}</td></tr>
+      <tr><th>{{ t('form.reporter_name') }}</th><td>{{ c.reporter_name }} — {{ c.reporter_contact }}</td></tr>
+      <tr><th>⏱️</th><td>{{ fmt_dt(c.created_at) }}</td></tr>
+      <tr><th>{{ t('form.description') }}</th><td style="white-space:pre-wrap">{{ c.description }}</td></tr>
+    </table>
+    <div class="pc-qr">
+      <img src="/qr/{{ c.ticket_no }}.png" alt="QR">
+      <div class="small muted">{{ t('cd.qr_hint') }}</div>
+      <div class="small" style="direction:ltr;color:var(--primary);word-break:break-all">{{ track_url }}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
