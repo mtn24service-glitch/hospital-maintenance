@@ -152,6 +152,25 @@
   <div class="card"><div class="section-title">{{ t('dash.chart_time') }}</div><div class="chart-box"><canvas id="chart-time"></canvas></div></div>
 </div>
 
+<!-- Public report form QR -->
+<div class="card mt">
+  <div class="section-title">🔗 {% if lang == 'ar' %}رمز QR لصفحة تقديم البلاغ (للعامة){% else %}QR code for the public report page{% endif %}</div>
+  <div class="qr-panel">
+    <img src="{{ form_qr }}" alt="QR" class="qr-img">
+    <div class="qr-meta">
+      <p class="small muted">
+        {% if lang == 'ar' %}اطبع هذا الرمز أو الصقه في الأقسام ليتمكن أي موظف من تقديم بلاغ صيانة بمسحه بالجوال مباشرة.{% else %}Print or post this code in departments so any staff member can submit a maintenance request by scanning it with their phone.{% endif %}
+      </p>
+      <div class="qr-url">{{ form_url }}</div>
+      <div class="row mt">
+        <a href="/poster" target="_blank" class="btn btn-primary btn-sm">🖨️ {{ t('btn.print') }}</a>
+        <a href="{{ form_qr }}" download="report-qr.png" class="btn btn-outline btn-sm">⬇️ {% if lang == 'ar' %}تنزيل الصورة{% else %}Download image{% endif %}</a>
+        <a href="/report" target="_blank" class="btn btn-outline btn-sm">↗️ {{ t('nav.report') }}</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="grid grid-2 mt">
   <div class="card">
     <div class="section-title">{{ t('dash.tech_perf') }}</div>

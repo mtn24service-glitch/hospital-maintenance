@@ -256,6 +256,13 @@ body.card-body { background: var(--bg); }
 .poster-note { margin-top: 18px; }
 @media print { .poster-steps > div { background: #f1f5f9; border-color: #cbd5e1; color: #0f172a; } }
 
+/* ---------- Dashboard QR panel ---------- */
+.qr-panel { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.qr-img { width: 190px; height: 190px; border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 8px; }
+.qr-meta { flex: 1; min-width: 240px; }
+.qr-url { direction: ltr; color: var(--primary); word-break: break-all; font-size: 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+[data-theme="dark"] .qr-img { background: #fff; }
+
 /* ---------- LTR adjustments ---------- */
 [dir="ltr"] .tbl th { text-align: left; }
 [dir="ltr"] .timeline { padding-right: 0; padding-left: 22px; }

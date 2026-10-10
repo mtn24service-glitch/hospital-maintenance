@@ -610,6 +610,8 @@ def dashboard(request: Request, page: int = Query(1), status: str = "all",
         "avg_response": db.avg_response_hours(),
         "avg_resolve": db.avg_resolve_hours(),
         "tech_perf": db.technicians_performance(),
+        "form_url": f"{public_base(request)}/report",
+        "form_qr": "/form-qr.png",
     })
 
 
