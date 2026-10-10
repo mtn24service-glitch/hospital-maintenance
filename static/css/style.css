@@ -92,6 +92,7 @@ a { color: var(--primary); text-decoration: none; }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
+.chart-box { position: relative; width: 100%; height: 300px; }
 @media (max-width: 1000px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .grid-3, .grid-2 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 620px) { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } .topbar { flex-wrap: wrap; } .nav { order: 3; width: 100%; justify-content: center; } }
 
@@ -242,6 +243,18 @@ section.section { margin-bottom: 22px; }
 .pc-qr { text-align: center; }
 .pc-qr img { width: 150px; height: 150px; }
 body.card-body { background: var(--bg); }
+
+/* ---------- Printable QR poster ---------- */
+.poster-card { text-align: center; }
+.poster-sub { color: #475569; font-size: 15px; margin: 4px 0 18px; }
+.poster-qr { display: flex; justify-content: center; margin: 8px 0; }
+.poster-qr img { width: 300px; height: 300px; max-width: 70vw; }
+.poster-url { direction: ltr; color: var(--primary); word-break: break-all; font-size: 14px; margin-top: 10px; }
+.poster-steps { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 22px 0 8px; }
+.poster-steps > div { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px 16px; font-size: 14px; color: #065f46; min-width: 150px; }
+.poster-steps .n { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; margin-inline-end: 6px; }
+.poster-note { margin-top: 18px; }
+@media print { .poster-steps > div { background: #f1f5f9; border-color: #cbd5e1; color: #0f172a; } }
 
 /* ---------- LTR adjustments ---------- */
 [dir="ltr"] .tbl th { text-align: left; }

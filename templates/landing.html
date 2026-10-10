@@ -38,8 +38,12 @@
     <p class="small muted">⚠️ {% if lang == 'ar' %}في الحالات التي تشكّل خطراً مباشراً على المرضى أو العاملين، اتصل فوراً بالطوارئ والجهات المختصة بالمشفى — هذا النظام لا يحل محل إجراءات الطوارئ المعتمدة.{% else %}In cases of immediate danger to patients or staff, call the emergency services directly — this system does not replace approved emergency procedures.{% endif %}</p>
   </div>
 
+  <p class="muted" style="margin-top:24px">
+    <a href="/poster">🖨️ {% if lang == 'ar' %}ملصق الباركود (QR) للطباعة{% else %}Printable QR poster{% endif %}</a>
+  </p>
+
   {% if not user %}
-  <p class="muted" style="margin-top:28px">
+  <p class="muted" style="margin-top:10px">
     <a href="/login">{{ t('nav.login') }}</a> · <a href="/report">{{ t('nav.report') }}</a>
   </p>
   {% endif %}

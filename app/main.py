@@ -542,6 +542,27 @@ def complaint_qr(request: Request, ticket_no: str):
                     headers={"Cache-Control": "public, max-age=86400"})
 
 
+@app.get("/form-qr.png")
+def form_qr(request: Request):
+    """Fixed QR that always points to the standalone public report form.
+
+    Suitable for printing on stickers/posters so anyone can scan and submit a
+    maintenance request directly, without ever reaching the dashboard.
+    """
+    png = ex.make_qr_png(f"{public_base(request)}/report", box_size=10, border=2)
+    return Response(content=png, media_type="image/png",
+                    headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/poster", response_class=HTMLResponse)
+def poster(request: Request):
+    """Printable A4 poster with the fixed form QR (public, RTL)."""
+    return render(request, "poster.html", {
+        "form_url": f"{public_base(request)}/report",
+        "qr_src": "/form-qr.png",
+    })
+
+
 @app.get("/set-lang/{code}")
 def set_lang(request: Request, code: str, next: str = "/"):
     code = code if code in i18n.LANGS else i18n.DEFAULT_LANG

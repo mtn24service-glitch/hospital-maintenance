@@ -134,6 +134,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 | الإعدادات | `/settings` |
 | بطاقة طباعة بلاغ | `/card/{ticket_no}` |
 | رمز QR بلاغ | `/qr/{ticket_no}.png` |
+| ملصق QR ثابت لنموذج البلاغ (للطباعة) | `/poster` |
+| صورة QR ثابتة لنموذج البلاغ | `/form-qr.png` |
 | تقرير بلاغ PDF | `/complaints/{id}/pdf` |
 | Excel لحظي | `/reports/export/live` |
 | تبديل اللغة | `/set-lang/{ar|en}` |

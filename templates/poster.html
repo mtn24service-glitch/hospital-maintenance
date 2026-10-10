@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{% if lang == 'ar' %}ملصق الباركود{% else %}QR Poster{% endif %}{% endblock %}
+{% block body_class %}card-body{% endblock %}
+{% block content %}
+<div class="print-toolbar no-print">
+  <button class="btn btn-primary" onclick="window.print()">🖨️ {{ t('btn.print') }}</button>
+  <a href="/" class="btn btn-outline">{{ t('btn.back') }}</a>
+</div>
+
+<div class="print-card poster-card">
+  <div class="pc-head">
+    <img src="/static/img/jazan-cluster-logo.png" alt="logo" class="pc-logo">
+    <div class="pc-hosp">
+      <b>{{ t('brand.hospital') }}</b>
+      <span>{{ t('brand.name') }}</span>
+    </div>
+    <img src="/static/img/jazan-cluster-logo.png" alt="logo" class="pc-logo">
+  </div>
+
+  <h2 class="pc-title">{% if lang == 'ar' %}أبلغ عن عطل صيانة بسهولة{% else %}Report a Maintenance Fault{% endif %}</h2>
+  <p class="poster-sub">{% if lang == 'ar' %}امسح رمز الاستجابة السريعة (QR) بكاميرا جوالك ثم عبّئ النموذج{% else %}Scan the QR code with your phone camera, then fill the form{% endif %}</p>
+
+  <div class="poster-qr">
+    <img src="{{ qr_src }}" alt="QR">
+  </div>
+
+  <div class="poster-url">{{ form_url }}</div>
+
+  <div class="poster-steps">
+    <div><span class="n">1</span> {% if lang == 'ar' %}امسح الرمز{% else %}Scan the code{% endif %}</div>
+    <div><span class="n">2</span> {% if lang == 'ar' %}عبّئ بيانات العطل{% else %}Fill the fault details{% endif %}</div>
+    <div><span class="n">3</span> {% if lang == 'ar' %}احصل على رقم البلاغ وتابع حالته{% else %}Get your ticket and track it{% endif %}</div>
+  </div>
+
+  <p class="small muted poster-note">⚠️ {% if lang == 'ar' %}في الحالات التي تشكّل خطراً مباشراً على المرضى أو العاملين، اتصل فوراً بالطوارئ والجهات المختصة بالمشفى.{% else %}In cases of immediate danger to patients or staff, call the emergency services directly.{% endif %}</p>
+</div>
+{% endblock %}
