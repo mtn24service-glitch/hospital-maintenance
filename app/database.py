@@ -625,10 +625,10 @@ def ensure_first_admin() -> None:
         n = d.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
     if n == 0:
         create_user(
-            "admin", "admin123", "مدير النظام",
+            "admin", "Aa123456", "مدير النظام",
             "admin", "الإدارة",
         )
-        set_setting("boot_admin_notice", "أُنشئ حساب المدير الافتراضي (admin / admin123) — غيّره فوراً")
+        set_setting("boot_admin_notice", "أُنشئ حساب المدير الافتراضي (admin / Aa123456) — غيّره فوراً")
 
 
 def require_login(token):

@@ -147,7 +147,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 | المستخدم | كلمة المرور | الدور |
 |----------|-------------|-------|
-| `admin` | `admin123` | admin |
+| `admin` | `Aa123456` | admin |
 | `manager_demo` | `demo1234` | maint_manager |
 | `demo_staff` | `demo1234` | staff |
 
